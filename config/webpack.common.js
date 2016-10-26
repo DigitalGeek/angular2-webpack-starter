@@ -4,6 +4,15 @@
 
 const webpack = require('webpack');
 const helpers = require('./helpers');
+// use angular cli configuration file to load the external styles and scripts
+const ngCliConfig = require('../../cli/angular-cli');
+const styles = ngCliConfig.apps[0].styles.map((path) => {
+  return helpers.root('../cli/src/' + path);
+});
+
+const scripts = ngCliConfig.apps[0].scripts.map((path) => {
+  return helpers.root('../cli/src/' + path);
+});
 
 /*
  * Webpack Plugins
@@ -18,14 +27,18 @@ const HtmlElementsPlugin = require('./html-elements-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const LoaderOptionsPlugin = require('webpack/lib/LoaderOptionsPlugin');
 const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 /*
  * Webpack Constants
  */
 const HMR = helpers.hasProcessFlag('hot');
 const METADATA = {
-  title: 'Angular2 Webpack Starter by @gdi2290 from @AngularClass',
+  title: 'MySchoolWorx',
   baseUrl: '/',
+  API_URL: process.env.API_URL,
+  API_HOSTNAME: process.env.API_HOSTNAME,
+  API_DOMAIN: process.env.API_DOMAIN,
   isDevServer: helpers.isWebpackDevServer()
 };
 
@@ -55,9 +68,11 @@ module.exports = function (options) {
      */
     entry: {
 
-      'polyfills': './src/polyfills.browser.ts',
-      'vendor': './src/vendor.browser.ts',
-      'main': './src/main.browser.ts'
+      'polyfills': '../cli/src/_starter/polyfills.ts',
+      'scripts': scripts,
+      'vendor': '../cli/src/_starter/vendor.ts',
+      'main': '../cli/src/_starter/main.ts',
+      'styles': styles
 
     },
 
@@ -76,7 +91,7 @@ module.exports = function (options) {
       extensions: ['.ts', '.js', '.json'],
 
       // An array of directory names to be resolved to the current directory
-      modules: [helpers.root('src'), 'node_modules'],
+      modules: [helpers.root('../cli/src'), helpers.root('../cli/node_modules')],
 
     },
 
@@ -105,7 +120,11 @@ module.exports = function (options) {
           ],
           exclude: [/\.(spec|e2e)\.ts$/]
         },
-
+        {
+          test: /\.js$/,
+          include: scripts,
+          loader: 'script-loader'
+        },
         /*
          * Json loader support for *.json files.
          *
@@ -123,7 +142,18 @@ module.exports = function (options) {
          */
         {
           test: /\.css$/,
-          loaders: ['to-string-loader', 'css-loader']
+          loaders: ['to-string-loader', 'css-loader'],
+          exclude: styles
+        },
+
+        {
+          // for 3rd party css
+          test: /\.css$/,
+          include: styles,
+          loaders: ExtractTextPlugin.extract({
+            fallbackLoader: "style-loader",
+            loader: "css-loader?minimize"
+          }),
         },
 
         /* Raw loader support for *.html
@@ -134,13 +164,13 @@ module.exports = function (options) {
         {
           test: /\.html$/,
           loader: 'raw-loader',
-          exclude: [helpers.root('src/index.html')]
+          exclude: [helpers.root('../cli/src/index.html')]
         },
 
         /* File loader for supporting images, for example, in CSS files.
          */
         {
-          test: /\.(jpg|png|gif)$/,
+          test: /\.(png|woff|woff2|eot|ttf|svg)/,
           loader: 'file'
         },
 
@@ -176,7 +206,7 @@ module.exports = function (options) {
        * See: https://github.com/webpack/docs/wiki/optimization#multi-page-app
        */
       new CommonsChunkPlugin({
-        name: ['polyfills', 'vendor'].reverse()
+        name: ['polyfills', 'scripts', 'vendor'].reverse()
       }),
 
       /**
@@ -189,7 +219,7 @@ module.exports = function (options) {
       new ContextReplacementPlugin(
         // The (\\|\/) piece accounts for path separators in *nix and Windows
         /angular(\\|\/)core(\\|\/)(esm(\\|\/)src|src)(\\|\/)linker/,
-        helpers.root('src') // location of your src
+        helpers.root('../cli/src') // location of your src
       ),
 
       /*
@@ -201,7 +231,7 @@ module.exports = function (options) {
        * See: https://www.npmjs.com/package/copy-webpack-plugin
        */
       new CopyWebpackPlugin([{
-        from: 'src/assets',
+        from: '../cli/src/assets',
         to: 'assets',
       }, {
         from: 'src/meta',
@@ -217,7 +247,7 @@ module.exports = function (options) {
        * See: https://github.com/ampedandwired/html-webpack-plugin
        */
       new HtmlWebpackPlugin({
-        template: 'src/index.html',
+        template: helpers.root('../cli/src/index.html'),
         title: METADATA.title,
         chunksSortMode: 'dependency',
         metadata: METADATA,
@@ -267,6 +297,8 @@ module.exports = function (options) {
        * See: https://gist.github.com/sokra/27b24881210b56bbaff7
        */
       new LoaderOptionsPlugin({}),
+
+      new ExtractTextPlugin("styles.[hash].css")
 
     ],
 
