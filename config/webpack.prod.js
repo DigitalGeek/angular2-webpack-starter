@@ -19,6 +19,14 @@ const UglifyJsPlugin = require('webpack/lib/optimize/UglifyJsPlugin');
 const WebpackMd5Hash = require('webpack-md5-hash');
 const CompressionPlugin = require('compression-webpack-plugin');
 
+
+var compressionAlgorithm = 'zopfli';
+try {
+  require('node-zopfli');
+} catch(err) {
+  compressionAlgorithm = 'gzip';
+}
+
 /**
  * Webpack Constants
  */
@@ -194,7 +202,7 @@ module.exports = function (env) {
       //  install compression-webpack-plugin
       new CompressionPlugin({
           asset: '[path].gz[query]',
-          algorithm: 'gzip',
+          algorithm: compressionAlgorithm,
           test: /\.css$|\.html$|\.js$|\.map$/,
           threshold: 10240,
           minRatio: 0.8
