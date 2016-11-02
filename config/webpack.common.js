@@ -251,7 +251,7 @@ module.exports = function (options) {
         title: METADATA.title,
         chunksSortMode: 'dependency',
         metadata: METADATA,
-        inject: 'head'
+        inject: 'body'
       }),
 
       /*
@@ -298,7 +298,7 @@ module.exports = function (options) {
        */
       new LoaderOptionsPlugin({}),
 
-      new ExtractTextPlugin("styles.[hash].css")
+      new ExtractTextPlugin("[name].css")
 
     ],
 
