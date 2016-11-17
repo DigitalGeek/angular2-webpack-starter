@@ -66,7 +66,13 @@ function createTag(tagName, attrMap, publicPath) {
       return name + '="' + value + '"';
     });
 
-  return '<' + tagName + ' ' + attributes.join(' ') + '>';
+  var tag = '<' + tagName + ' ' + attributes.join(' ') + '>';
+
+  if (tagName === 'script') {
+    return tag + '</script>';
+  }
+
+  return tag;
 }
 
 /**

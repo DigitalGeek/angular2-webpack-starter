@@ -13,7 +13,7 @@
  * Will not prefix the publicPath on href (href attributes are added by default
  *
  */
-module.exports = {
+let headTags  = {
   link: [
     /** <link> tags for 'apple-touch-icon' (AKA Web Clips). **/
     { rel: 'apple-touch-icon', sizes: '57x57', href: '/assets/icon/apple-icon-57x57.png' },
@@ -37,9 +37,54 @@ module.exports = {
     /** <link> tags for a Web App Manifest **/
     { rel: 'manifest', href: '/assets/manifest.json' }
   ],
+  script: [],
   meta: [
     { name: 'msapplication-TileColor', content: '#00bcd4' },
     { name: 'msapplication-TileImage', content: '/assets/icon/ms-icon-144x144.png', '=content': true },
     { name: 'theme-color', content: '#00bcd4' }
   ]
 };
+
+
+
+
+exports.getHeadTags = function getHeadTags(dev) {
+
+  if (dev) {
+    const ngCliConfig = require('../../cli/angular-cli');
+    ngCliConfig.apps[0].styles
+      .map((path) => {
+        // css in node_module are moved to assets
+        let _path = path.split('/');
+        // (../node_modules)
+        if (_path[0] === '..') {
+          return 'assets/' + _path.pop();
+        }
+
+        return path;
+      })
+      .forEach((path) => {
+        headTags.link.push({rel: 'stylesheet', type: 'text/css', href: '/' + path})
+      });
+
+    ngCliConfig.apps[0].scripts
+      .map((path) => {
+        // libs in node_module are moved to assets
+        let _path = path.split('/');
+        // (../node_modules)
+        if (_path[0] === '..') {
+          return 'assets/' + _path.pop();
+        }
+
+        return path;
+      })
+      .forEach((path) => {
+        headTags.script.push({src: '/' + path})
+      });
+  }
+
+  return headTags;
+}
+
+
+

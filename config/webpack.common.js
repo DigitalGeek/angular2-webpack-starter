@@ -10,24 +10,20 @@ const styles = ngCliConfig.apps[0].styles.map((path) => {
   return helpers.root('../cli/src/' + path);
 });
 
-const scripts = ngCliConfig.apps[0].scripts.map((path) => {
-  return helpers.root('../cli/src/' + path);
-});
-
 /*
  * Webpack Plugins
  */
 // problem with copy-webpack-plugin
 const AssetsPlugin = require('assets-webpack-plugin');
 const ContextReplacementPlugin = require('webpack/lib/ContextReplacementPlugin');
-const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
+// const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const ForkCheckerPlugin = require('awesome-typescript-loader').ForkCheckerPlugin;
-const HtmlElementsPlugin = require('./html-elements-plugin');
+// const HtmlElementsPlugin = require('./html-elements-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const LoaderOptionsPlugin = require('webpack/lib/LoaderOptionsPlugin');
 const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+// const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 /*
  * Webpack Constants
@@ -69,10 +65,10 @@ module.exports = function (options) {
     entry: {
 
       'polyfills': '../cli/src/_starter/polyfills.ts',
-      'scripts': scripts,
+      // 'scripts': scripts,
       'vendor': '../cli/src/_starter/vendor.ts',
       'main': '../cli/src/_starter/main.ts',
-      'styles': styles
+      // 'styles': styles
 
     },
 
@@ -114,17 +110,18 @@ module.exports = function (options) {
         {
           test: /\.ts$/,
           loaders: [
-            '@angularclass/hmr-loader?pretty=' + !isProd + '&prod=' + isProd,
             'awesome-typescript-loader',
             'angular2-template-loader'
           ],
           exclude: [/\.(spec|e2e)\.ts$/]
         },
+        /*
         {
           test: /\.js$/,
           include: scripts,
           loader: 'script-loader'
         },
+        *
         /*
          * Json loader support for *.json files.
          *
@@ -146,15 +143,17 @@ module.exports = function (options) {
           exclude: styles
         },
 
+        /*
         {
           // for 3rd party css
           test: /\.css$/,
           include: styles,
           loaders: ExtractTextPlugin.extract({
             fallbackLoader: "style-loader",
-            loader: "css-loader?minimize"
+            loader: "css-loader"
           }),
         },
+        */
 
         /* Raw loader support for *.html
          * Returns file content as string
@@ -204,10 +203,12 @@ module.exports = function (options) {
        *
        * See: https://webpack.github.io/docs/list-of-plugins.html#commonschunkplugin
        * See: https://github.com/webpack/docs/wiki/optimization#multi-page-app
+       * moved to prod/dev reduced list in dev
+        new CommonsChunkPlugin({
+          name: ['polyfills', 'scripts', 'vendor'].reverse()
+          name: ['polyfills', 'vendor'].reverse()
+        }),
        */
-      new CommonsChunkPlugin({
-        name: ['polyfills', 'scripts', 'vendor'].reverse()
-      }),
 
       /**
        * Plugin: ContextReplacementPlugin
@@ -286,10 +287,11 @@ module.exports = function (options) {
        *  <%= webpackConfig.htmlElements.headTags %>
        *
        * Dependencies: HtmlWebpackPlugin
-       */
+       * moved to prod/dev for performace
       new HtmlElementsPlugin({
         headTags: require('./head-config.common')
       }),
+       */
 
       /**
        * Plugin LoaderOptionsPlugin (experimental)
@@ -298,7 +300,7 @@ module.exports = function (options) {
        */
       new LoaderOptionsPlugin({}),
 
-      new ExtractTextPlugin("[name].css")
+      // new ExtractTextPlugin("[name].css")
 
     ],
 

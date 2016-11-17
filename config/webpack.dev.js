@@ -6,12 +6,42 @@ const helpers = require('./helpers');
 const webpackMerge = require('webpack-merge'); // used to merge webpack configs
 const commonConfig = require('./webpack.common.js'); // the settings that are common to prod and dev
 
+const headTags = require('./head-config.common').getHeadTags(true);
+
+const ngCliConfig = require('../../cli/angular-cli');
+let filesToCopy = ngCliConfig.apps[0].styles
+  .filter((path) => {
+    // (../node_modules)
+    return path.split('/')[0] === '..';
+  })
+  .map((path) => {
+    return {
+      from: path.replace('..', '../cli'),
+      to: 'assets'
+    };
+  });
+
+ngCliConfig.apps[0].scripts
+  .filter((path) => {
+    // (../node_modules)
+    return path.split('/')[0] === '..';
+  })
+  .forEach((path) => {
+    filesToCopy.push({
+      from: path.replace('..', '../cli'),
+      to: 'assets'
+    });
+  });
+
 /**
  * Webpack Plugins
  */
 const DefinePlugin = require('webpack/lib/DefinePlugin');
 const NamedModulesPlugin = require('webpack/lib/NamedModulesPlugin');
 const LoaderOptionsPlugin = require('webpack/lib/LoaderOptionsPlugin');
+const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlElementsPlugin = require('./html-elements-plugin');
 
 /**
  * Webpack Constants
@@ -85,6 +115,14 @@ module.exports = function (options) {
     },
 
     plugins: [
+
+      new CopyWebpackPlugin(filesToCopy),
+      new CommonsChunkPlugin({
+        name: ['polyfills', 'vendor'].reverse()
+      }),
+      new HtmlElementsPlugin({
+        headTags: headTags
+      }),
 
       /**
        * Plugin: DefinePlugin

@@ -6,6 +6,18 @@ const helpers = require('./helpers');
 const webpackMerge = require('webpack-merge'); // used to merge webpack configs
 const commonConfig = require('./webpack.common.js'); // the settings that are common to prod and dev
 
+const headTags = require('./head-config.common').getHeadTags();
+
+// use angular cli configuration file to load the external styles and scripts
+const ngCliConfig = require('../../cli/angular-cli');
+const styles = ngCliConfig.apps[0].styles.map((path) => {
+  return helpers.root('../cli/src/' + path);
+});
+
+const scripts = ngCliConfig.apps[0].scripts.map((path) => {
+  return helpers.root('../cli/src/' + path);
+});
+
 /**
  * Webpack Plugins
  */
@@ -18,7 +30,9 @@ const ProvidePlugin = require('webpack/lib/ProvidePlugin');
 const UglifyJsPlugin = require('webpack/lib/optimize/UglifyJsPlugin');
 const WebpackMd5Hash = require('webpack-md5-hash');
 const CompressionPlugin = require('compression-webpack-plugin');
-
+const CommonsChunkPlugin = require('webpack/lib/optimize/CommonsChunkPlugin');
+const HtmlElementsPlugin = require('./html-elements-plugin');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 var compressionAlgorithm = 'zopfli';
 try {
@@ -42,6 +56,31 @@ const METADATA = webpackMerge(commonConfig({env: ENV}).metadata, {
 
 module.exports = function (env) {
   return webpackMerge(commonConfig({env: ENV}), {
+
+    entry: {
+      'scripts': scripts,
+      'styles': styles
+    },
+
+    module: {
+
+      rules: [
+        {
+          test: /\.js$/,
+          include: scripts,
+          loader: 'script-loader'
+        },
+        {
+          // for 3rd party css
+          test: /\.css$/,
+          include: styles,
+          loaders: ExtractTextPlugin.extract({
+            fallbackLoader: "style-loader",
+            loader: "css-loader?minimize"
+          }),
+        }
+      ]
+    },
 
     /**
      * Developer tool to enhance debugging
@@ -98,6 +137,14 @@ module.exports = function (env) {
      */
     plugins: [
 
+      new CommonsChunkPlugin({
+        name: ['polyfills', 'scripts', 'vendor'].reverse()
+      }),
+      new HtmlElementsPlugin({
+        headTags: headTags
+      }),
+
+      new ExtractTextPlugin("[name].css"),
       /**
        * Plugin: WebpackMd5Hash
        * Description: Plugin to replace a standard webpack chunkhash with md5.
